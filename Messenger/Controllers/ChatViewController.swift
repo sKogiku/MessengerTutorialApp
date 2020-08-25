@@ -12,6 +12,7 @@ import InputBarAccessoryView
 import SDWebImage
 import AVFoundation
 import AVKit
+import CoreLocation
 
 struct Message: MessageType {
     public var sender: SenderType
@@ -57,6 +58,11 @@ struct Media: MediaItem {
     var image: UIImage?
     var placeholderImage: UIImage
     var size: CGSize
+}
+
+struct Location: LocationItem {
+    var location: CLLocation
+    var size: CGSize
     
     
 }
@@ -64,7 +70,7 @@ struct Media: MediaItem {
 class ChatViewController: MessagesViewController {
     
     public static let dateFormatter: DateFormatter = {
-       let formatter = DateFormatter()
+        let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .long
         formatter.locale = .current
@@ -81,8 +87,8 @@ class ChatViewController: MessagesViewController {
         }
         let safeEmail = DatabaseManager.safeEmail(emailAddress: email)
         return Sender(photoURL: "",
-               senderId: safeEmail,
-               displayName: "Me")
+                      senderId: safeEmail,
+                      displayName: "Me")
     }
     
     init(with email: String, id: String?) {
@@ -97,7 +103,7 @@ class ChatViewController: MessagesViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-    
+        
         view.backgroundColor = .red
         messagesCollectionView.messagesDataSource = self
         messagesCollectionView.messagesLayoutDelegate = self
@@ -132,9 +138,55 @@ class ChatViewController: MessagesViewController {
         actionSheet.addAction(UIAlertAction(title: "Audio", style: .default, handler: { [weak self] _ in
             
         }))
+        actionSheet.addAction(UIAlertAction(title: "Location", style: .default, handler: { [weak self] _ in
+            self?.presentLocationPicker()
+            
+        }))
         actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         
         present(actionSheet, animated: true)
+    }
+    
+    private func presentLocationPicker() {
+        let vc = LocationPickerViewController(coordinates: nil)
+        vc.title = "Pick Location"
+        vc.navigationItem.largeTitleDisplayMode = .never
+        vc.completion = { [weak self] selectedCoordinates in
+            
+            guard let strongSelf = self else {
+                return
+            }
+            
+            guard let messageId = strongSelf.createMessageId(),
+                let conversationId = strongSelf.conversationId,
+                let name = strongSelf.title,
+                let selfSender = strongSelf.selfSender else {
+                    return
+            }
+            
+            let longitude: Double = selectedCoordinates.longitude
+            let latitude: Double = selectedCoordinates.latitude
+            
+            print("long = \(longitude) | lat = \(latitude)")
+            
+            let location = Location(location: CLLocation(latitude: latitude, longitude: longitude),
+                                    size: .zero)
+            
+            let message = Message(sender: selfSender,
+                                  messageId: messageId,
+                                  sentDate: Date(),
+                                  kind: .location(location))
+            
+            DatabaseManager.shared.sendMessage(to: conversationId, otherUserEmail: strongSelf.otherUserEmail, name: name, newMessage: message, completion: { success in
+                if success {
+                    print("Sent location message.")
+                }
+                else {
+                    print("Failed to send location message.")
+                }
+            })
+        }
+        navigationController?.pushViewController(vc, animated: true)
     }
     
     private func presentPhotoInputActionSheet() {
@@ -155,7 +207,7 @@ class ChatViewController: MessagesViewController {
             picker.allowsEditing = true
             self?.present(picker, animated: true)
         }))
-       
+        
         actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         
         present(actionSheet, animated: true)
@@ -183,7 +235,7 @@ class ChatViewController: MessagesViewController {
             picker.videoQuality = .typeMedium
             self?.present(picker, animated: true)
         }))
-       
+        
         actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         
         present(actionSheet, animated: true)
@@ -202,11 +254,11 @@ class ChatViewController: MessagesViewController {
                 self?.messages = messages
                 
                 DispatchQueue.main.async {
-                        self?.messagesCollectionView.reloadDataAndKeepOffset()
-                        if shouldScrollToBottom {
-                            self?.messagesCollectionView.scrollToBottom()
-                        }
+                    self?.messagesCollectionView.reloadDataAndKeepOffset()
+                    if shouldScrollToBottom {
+                        self?.messagesCollectionView.scrollToBottom()
                     }
+                }
             case .failure(let error):
                 print("Failed to get messages: \(error)")
             }
@@ -333,9 +385,9 @@ extension ChatViewController: InputBarAccessoryViewDelegate {
         }
         print("Sending: \(text)")
         let message = Message(sender: selfSender,
-        messageId: messageId,
-        sentDate: Date(),
-        kind: .text(text))
+                              messageId: messageId,
+                              sentDate: Date(),
+                              kind: .text(text))
         
         //Send Message
         if isNewConversation {
@@ -385,7 +437,7 @@ extension ChatViewController: InputBarAccessoryViewDelegate {
 extension ChatViewController: MessagesDataSource, MessagesLayoutDelegate, MessagesDisplayDelegate {
     func currentSender() -> SenderType {
         if let sender = selfSender {
-        return sender
+            return sender
         }
         fatalError("Self Sender is nil, email should be cached")
     }
@@ -416,28 +468,48 @@ extension ChatViewController: MessagesDataSource, MessagesLayoutDelegate, Messag
 }
 
 extension ChatViewController: MessageCellDelegate {
+    
+    func didTapMessage(in cell: MessageCollectionViewCell) {
+        guard let indexPath = messagesCollectionView.indexPath(for: cell) else {
+            return
+        }
+        let message = messages[indexPath.section]
+        
+        switch message.kind {
+        case .location(let locationData):
+            let coordinates = locationData.location.coordinate
+            let vc = LocationPickerViewController(coordinates: coordinates)
+            vc.title = "Location"
+            self.navigationController?.pushViewController(vc, animated: true)
+        default:
+            break
+        }
+    }
+    
+    
+    
     func didTapImage(in cell: MessageCollectionViewCell) {
-         guard let indexPath = messagesCollectionView.indexPath(for: cell) else {
-                   return
-               }
-               let message = messages[indexPath.section]
-               
-               switch message.kind {
-               case .photo(let media):
-                   guard let imageUrl = media.url else {
-                       return
-                   }
-                   let vc = PhotoViewerViewController(with: imageUrl)
-                   self.navigationController?.pushViewController(vc, animated: true)
-               case .video(let media):
-                guard let videoUrl = media.url else {
-                    return
-                }
-                   let vc = AVPlayerViewController()
-                vc.player = AVPlayer(url: videoUrl)
-                present(vc, animated: true)
-               default:
-                   break
-               }
+        guard let indexPath = messagesCollectionView.indexPath(for: cell) else {
+            return
+        }
+        let message = messages[indexPath.section]
+        
+        switch message.kind {
+        case .photo(let media):
+            guard let imageUrl = media.url else {
+                return
+            }
+            let vc = PhotoViewerViewController(with: imageUrl)
+            self.navigationController?.pushViewController(vc, animated: true)
+        case .video(let media):
+            guard let videoUrl = media.url else {
+                return
+            }
+            let vc = AVPlayerViewController()
+            vc.player = AVPlayer(url: videoUrl)
+            present(vc, animated: true)
+        default:
+            break
+        }
     }
 }

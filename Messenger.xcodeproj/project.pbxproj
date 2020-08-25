@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6E4A89A624F4B3E20036D59E /* LocationPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E4A89A524F4B3E20036D59E /* LocationPickerViewController.swift */; };
 		6E982CED24CFB1BD0093605C /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E982CEC24CFB1BD0093605C /* DatabaseManager.swift */; };
 		6EAE8AB224F3657A009DB021 /* NewConversationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAE8AB124F3657A009DB021 /* NewConversationCell.swift */; };
 		6EC36AA324CE6262007C27B8 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC36AA224CE6262007C27B8 /* AppDelegate.swift */; };
@@ -32,6 +33,7 @@
 /* Begin PBXFileReference section */
 		3A34C2A75975E6AC6D4DA856 /* Pods_Messenger.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Messenger.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		59025627B1291D7CAC7F9306 /* Pods-Messenger.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Messenger.release.xcconfig"; path = "Target Support Files/Pods-Messenger/Pods-Messenger.release.xcconfig"; sourceTree = "<group>"; };
+		6E4A89A524F4B3E20036D59E /* LocationPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPickerViewController.swift; sourceTree = "<group>"; };
 		6E982CEC24CFB1BD0093605C /* DatabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseManager.swift; sourceTree = "<group>"; };
 		6EAE8AB124F3657A009DB021 /* NewConversationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewConversationCell.swift; sourceTree = "<group>"; };
 		6EC36A9F24CE6262007C27B8 /* Messenger.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Messenger.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -118,6 +120,7 @@
 				6EC36AC424CE693B007C27B8 /* NewConversationViewController.swift */,
 				6EC36AC624CE6951007C27B8 /* ProfileViewController.swift */,
 				6ECF46EB24D1178300AAF4C8 /* ChatViewController.swift */,
+				6E4A89A524F4B3E20036D59E /* LocationPickerViewController.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -335,6 +338,7 @@
 				6ECF46EC24D1178300AAF4C8 /* ChatViewController.swift in Sources */,
 				6EC36AC124CE68F1007C27B8 /* PhotoViewerViewController.swift in Sources */,
 				6ECF46EE24D12FC400AAF4C8 /* StorageManager.swift in Sources */,
+				6E4A89A624F4B3E20036D59E /* LocationPickerViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
