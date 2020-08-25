@@ -45,7 +45,7 @@
         <scene sceneID="xGc-VL-37J">
             <objects>
                 <navigationController automaticallyAdjustsScrollViewInsets="NO" id="oSx-ff-rOh" sceneMemberID="viewController">
-                    <tabBarItem key="tabBarItem" title="Chats" id="y1r-fn-rPV"/>
+                    <tabBarItem key="tabBarItem" title="Chats" image="message" catalog="system" id="y1r-fn-rPV"/>
                     <toolbarItems/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" largeTitles="YES" id="lin-0C-0CR">
                         <rect key="frame" x="0.0" y="44" width="414" height="96"/>
@@ -64,7 +64,7 @@
         <scene sceneID="GZU-yk-GC0">
             <objects>
                 <navigationController id="eVN-XO-sdC" sceneMemberID="viewController">
-                    <tabBarItem key="tabBarItem" title="Profile" id="n5T-PV-KK6"/>
+                    <tabBarItem key="tabBarItem" title="Profile" image="person.circle" catalog="system" id="n5T-PV-KK6"/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" largeTitles="YES" id="xOK-jc-4Vd">
                         <rect key="frame" x="0.0" y="44" width="414" height="96"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -109,4 +109,8 @@
             <point key="canvasLocation" x="-10" y="1515"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="message" catalog="system" width="128" height="113"/>
+        <image name="person.circle" catalog="system" width="128" height="121"/>
+    </resources>
 </document>
