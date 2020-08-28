@@ -69,6 +69,10 @@ struct Location: LocationItem {
 
 class ChatViewController: MessagesViewController {
     
+    private var senderPhotoURL: URL?
+    private var otherUserPhotoURL: URL?
+    
+    
     public static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -77,7 +81,7 @@ class ChatViewController: MessagesViewController {
         return formatter
     }()
     public let otherUserEmail: String
-    private let conversationId: String?
+    private var conversationId: String?
     public var isNewConversation = false
     private var messages = [Message]()
     
@@ -396,6 +400,10 @@ extension ChatViewController: InputBarAccessoryViewDelegate {
                 if success {
                     print("Mesage sent.")
                     self?.isNewConversation = false
+                    let newConversationId = "conversation_\(message.messageId)"
+                    self?.conversationId = newConversationId
+                    self?.listenForMessages(id: newConversationId, shouldScrollToBottom: true)
+                    self?.messageInputBar.inputTextView.text = nil
                 }
                 else {
                     print("Failed to send.")
@@ -407,8 +415,9 @@ extension ChatViewController: InputBarAccessoryViewDelegate {
                 return
             }
             //Append to existing conversation data
-            DatabaseManager.shared.sendMessage(to: conversationId, otherUserEmail: otherUserEmail, name: name, newMessage: message, completion: { success in
+            DatabaseManager.shared.sendMessage(to: conversationId, otherUserEmail: otherUserEmail, name: name, newMessage: message, completion: { [weak self] success in
                 if success {
+                    self?.messageInputBar.inputTextView.text = nil
                     print("Message sent.")
                 }
                 else {
@@ -465,15 +474,83 @@ extension ChatViewController: MessagesDataSource, MessagesLayoutDelegate, Messag
             break
         }
     }
-}
-
-extension ChatViewController: MessageCellDelegate {
     
-    func didTapMessage(in cell: MessageCollectionViewCell) {
-        guard let indexPath = messagesCollectionView.indexPath(for: cell) else {
-            return
+    func backgroundColor(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> UIColor {
+        let sender = message.sender
+        if sender.senderId == selfSender?.senderId {
+            // Our message that we've sent
+            return .link
         }
-        let message = messages[indexPath.section]
+        return .secondarySystemBackground
+    }
+    
+    func configureAvatarView(_ avatarView: AvatarView, for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) {
+        
+        let sender = message.sender
+        
+        if sender.senderId == selfSender?.senderId {
+            // Show our image
+            if let currentUserImageURL = self.senderPhotoURL {
+                avatarView.sd_setImage(with: currentUserImageURL, completed: nil)
+            }
+            else {
+                // images/safeemail_profile_picture.png
+                
+                guard let email = UserDefaults.standard.value(forKey: "email") as? String else {
+                    return
+                }
+                
+                let safeEmail = DatabaseManager.safeEmail(emailAddress: email)
+                let path = "images/\(safeEmail)_profile_picture.png"
+                
+                // Fetch URL
+                StorageManager.shared.downloadURL(for: path, completion: { [weak self] result in
+                    switch result {
+                    case .success(let url):
+                        self?.senderPhotoURL = url
+                        DispatchQueue.main.async {
+                        avatarView.sd_setImage(with: url, completed: nil)
+                        }
+                    case .failure(let error):
+                        print("\(error)")
+                    }
+                })
+            }
+        }
+        else {
+            // Other user image
+            if let otherUserImageURL = self.otherUserPhotoURL {
+                avatarView.sd_setImage(with: otherUserImageURL, completed: nil)
+            }
+            else {
+                // Fetch url
+                let email = self.otherUserEmail
+                let safeEmail = DatabaseManager.safeEmail(emailAddress: email)
+                let path = "images/\(safeEmail)_profile_picture.png"
+                
+                // Fetch URL
+                StorageManager.shared.downloadURL(for: path, completion: { [weak self] result in
+                    switch result {
+                    case .success(let url):
+                        self?.otherUserPhotoURL = url
+                        DispatchQueue.main.async {
+                        avatarView.sd_setImage(with: url, completed: nil)
+                        }
+                    case .failure(let error):
+                        print("\(error)")
+                    }
+                })
+            }
+        }
+    }
+}
+    extension ChatViewController: MessageCellDelegate {
+        
+        func didTapMessage(in cell: MessageCollectionViewCell) {
+            guard let indexPath = messagesCollectionView.indexPath(for: cell) else {
+                return
+            }
+            let message = messages[indexPath.section]
         
         switch message.kind {
         case .location(let locationData):
@@ -486,30 +563,32 @@ extension ChatViewController: MessageCellDelegate {
         }
     }
     
-    
-    
-    func didTapImage(in cell: MessageCollectionViewCell) {
-        guard let indexPath = messagesCollectionView.indexPath(for: cell) else {
-            return
-        }
-        let message = messages[indexPath.section]
         
-        switch message.kind {
-        case .photo(let media):
-            guard let imageUrl = media.url else {
+        
+        func didTapImage(in cell: MessageCollectionViewCell) {
+            guard let indexPath = messagesCollectionView.indexPath(for: cell) else {
                 return
             }
-            let vc = PhotoViewerViewController(with: imageUrl)
-            self.navigationController?.pushViewController(vc, animated: true)
-        case .video(let media):
-            guard let videoUrl = media.url else {
-                return
+            let message = messages[indexPath.section]
+            
+            switch message.kind {
+            case .photo(let media):
+                guard let imageUrl = media.url else {
+                    return
+                }
+                let vc = PhotoViewerViewController(with: imageUrl)
+                self.navigationController?.pushViewController(vc, animated: true)
+            case .video(let media):
+                guard let videoUrl = media.url else {
+                    return
+                }
+                let vc = AVPlayerViewController()
+                vc.player = AVPlayer(url: videoUrl)
+                present(vc, animated: true)
+            default:
+                break
             }
-            let vc = AVPlayerViewController()
-            vc.player = AVPlayer(url: videoUrl)
-            present(vc, animated: true)
-        default:
-            break
+            
         }
-    }
 }
+
